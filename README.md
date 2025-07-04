@@ -22,14 +22,14 @@ This server implementation is inspired by the official [Model Context Protocol (
 pip install uv
 
 2. **Clone the repository and enter the project directory:**
-git clone <REPO_URL>
+git clone <REPO_URL> <br>
 cd bugzilla-mcp-server
 
 
 3. **Initialize the project and create a virtual environment:**
-uv init
-uv venv
-source .venv/bin/activate
+uv init <br>
+uv venv <br>
+source .venv/bin/activate <br>
 
 
 4. **Install dependencies:**
@@ -48,8 +48,8 @@ The server requires two environment variables:
 2. Navigate to `Preferences` > `API Keys`.
 3. Click **Generate new API key** and copy the generated key.
 
-Set these variables in your shell before starting the server:
-export BUGZILLA_API_URL="https://bugzilla.yourdomain.com/rest"
+Set these variables in your shell (eg. ~/.zshrc ) before starting the server:<br>
+export BUGZILLA_API_URL="https://bugzilla.yourdomain.com/rest"<br>
 export BUGZILLA_API_KEY="your_generated_api_key"
 
 
