@@ -18,6 +18,7 @@ BUGZILLA_API_KEY = os.getenv("BUGZILLA_API_KEY")
 if not BUGZILLA_API_KEY:
     logger.error("BUGZILLA_API_KEY environment variable is not set.")
     raise ValueError("BUGZILLA_API_KEY environment variable is required.")
+PORT = 4200
 HEADERS = {
     "Content-Type": "application/json",
     "Accept": "application/json",
@@ -395,10 +396,104 @@ def update_bug(bug_id: str, bug_data: Dict[str, Any]) -> Dict[str, Any]:
         raise ValueError("Failed to update Bugzilla bug.")
     return response.json()
 
+# Get bug comments, which includes the initial description of the bug.
+# GET /rest/bug/(id)/comment
+@mcp.tool()
+def get_bug_comments(bug_id: str) -> Dict[str, Any]:
+    """
+    Gets comments for a specific bug in Bugzilla. 
+    Typically first comment is the initial description of the bug.
+    first comment may also contain the reproduction steps, if provided.
+    Any subsequent comment numbers are the comments users have left for the bug.
+
+
+    Args:
+        bug_id (str): ID of the bug to fetch comments for.
+    
+    Returns:
+        dict: {
+        "bugs": {
+        {id}: {
+        'comments': dict[str, Any],  # Comments for the bug
+        }}}
+        Response format:
+            {
+        "bugs": {
+            "35": {
+            "comments": [
+                {
+                "time": "2000-07-25T13:50:04Z",
+                "text": "test bug to fix problem in removing from cc list.",
+                "bug_id": 35,
+                "count": 0,
+                "attachment_id": null,
+                "is_private": false,
+                "tags": [],
+                "creator": "user@bugzilla.org",
+                "creation_time": "2000-07-25T13:50:04Z",
+                "id": 75
+                }
+            ]
+            }
+            },
+            "comments": {}
+        }
+        A Bugzilla comment object.
+
+        Attributes:
+        id (int): The globally unique ID for the comment.
+
+        bug_id (int): The ID of the bug that this comment is on.
+
+        attachment_id (int or None): If the comment was made on an attachment, this
+            will be the ID of that attachment. Otherwise, it will be None.
+
+        count (int): The number of the comment local to the bug.
+            The Description is 0; comments start with 1.
+
+        text (str): The actual text of the comment.
+
+        creator (str): The login name of the comment’s author.
+
+        time (datetime): The time (in Bugzilla’s timezone) that the comment was added.
+
+        creation_time (datetime): Same as the `time` field. Use this field instead of
+            `time` for consistency with other methods, including Get Bug and Get Attachment.
+            For compatibility, `time` is still usable but may be deprecated in a future release.
+
+        is_private (bool): True if this comment is private (only visible to a certain
+            group called the “insidergroup”), False otherwise.
+    
+    Raises:
+        ValueError: If the Bugzilla Request fails.
+    
+    Example:
+        ```python
+        # Get comments for a bug with ID 123456
+        get_bug_comments("123456")
+        ```
+    """
+    url = f"{BUGZILLA_API_URL}bug/{bug_id}/comment"
+    params = {"api_key": BUGZILLA_API_KEY}
+    response = requests.get(
+        url,
+        params=params,
+        verify=False,
+        headers=HEADERS
+    )
+    if response.status_code != 200:
+        if response.status_code == 404:
+            logger.error(f" Bug not found: {bug_id}")
+            return {"error": "Bug not found"}
+        logger.error(f"Bugzilla response status: {response.status_code}")
+        logger.error(f"Bugzilla response text: {response.text}")
+        raise ValueError("Failed to fetch Bugzilla bug comments.")
+    return response.json()
+
 if __name__ == "__main__":
     mcp.run(transport="http",
         host="127.0.0.1",
-        port=4200,
+        port=PORT,
         path="/mcp",
         log_level="debug",
     )
